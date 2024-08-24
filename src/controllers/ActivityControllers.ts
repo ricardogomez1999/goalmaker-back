@@ -7,7 +7,7 @@ export class ActivityControllers {
 
     try {
       await activity.save();
-      res.send("Activity created successfully");
+      res.send("Activity created successfully ");
     } catch (error) {
       res.status(500).json({ error });
     }
