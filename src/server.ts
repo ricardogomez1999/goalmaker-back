@@ -5,6 +5,7 @@ import { connectDB } from "./config/db";
 import cors from "cors";
 import financialRoutes from "./routes/financialsRoutes";
 import healthRoutes from "./routes/healthRoutes";
+import authRoutes from "./routes/authRoutes";
 import { corsConfig } from "./config/cors";
 
 dotenv.config();
@@ -18,6 +19,7 @@ app.use(cors(corsConfig));
 app.use(express.json());
 
 //Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/financials", financialRoutes);
 app.use("/api/health", healthRoutes);
 

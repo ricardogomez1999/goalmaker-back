@@ -1,0 +1,24 @@
+import { transporter } from "../config/nodemailer";
+
+interface IEmail {
+  email: string;
+  name: string;
+  token: string;
+}
+
+export class AuthEmail {
+  static sendConfirmationEmail = async (user: IEmail) => {
+    const info = await transporter.sendMail({
+      from: "GoalMaker APP <info@goalmaker.com>",
+      to: user.email,
+      subject: "GoalMaker - Confirm your account",
+      text: "GoalMaker - Confirm your email",
+      html: `<p>Hello: ${user.name}, you have created your account in GoalMaker App, almost done, you only need to confirm your account</p>
+        <p>Please click here to confirm your account</p>
+        <a href=""> Confirm account </a>
+        <p> use this code to confirm: <b> ${user.token}</b>
+        <p> This token expires in 10 min</p>
+      `,
+    });
+  };
+}
