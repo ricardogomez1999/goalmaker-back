@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import User from "../models/User";
-import { hashPassword } from "../utils/auth";
+import { checkPassword, hashPassword } from "../utils/auth";
 import Token from "../models/Token";
 import { generateToken } from "../utils/token";
 import { AuthEmail } from "../emails/AuthEmail";
@@ -81,9 +81,19 @@ export class AuthController {
           token: token.token,
         });
 
-        const error = new Error("Please confirm you account first");
+        const error = new Error(
+          "We sent an email with the confirmation token. Please confirm you account first"
+        );
         return res.status(401).json({ error: error.message });
       }
+
+      const isPasswordCorrect = await checkPassword(password, user.password);
+      if (!isPasswordCorrect) {
+        const error = new Error("Incorrect passwor");
+        return res.status(401).json({ error: error.message });
+      }
+
+      res.send("Authenticated...");
     } catch (error) {
       res.status(500).json({ error: "An error has occurred" });
     }
