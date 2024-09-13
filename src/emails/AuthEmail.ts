@@ -18,7 +18,7 @@ export class AuthEmail {
       text: "GoalMaker - Confirm your email",
       html: `<p>Hello: ${user.name}, you have created your account in GoalMaker App, almost done, you only need to confirm your account</p>
         <p>Please click here to confirm your account</p>
-        <a href="${process.env.FRONTEND_URL}/auth/confirm-account"> Confirm account </a>
+        <a href="${process.env.FRONTEND_URL}auth/confirm-account"> Confirm account </a>
         <p> use this code to confirm: <b> ${user.token}</b>
         <p> This token expires in 10 min</p>
       `,
