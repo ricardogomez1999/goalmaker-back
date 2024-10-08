@@ -109,7 +109,7 @@ router.get("/incomes-by-category", IncomeControllers.getIncomesByCategory);
 router.post(
   "/budget",
   body("quantity").notEmpty().withMessage("You need to enter a budget"),
-  body("quantity").isNumeric().withMessage("Budget need to be a number"),
+  body("quantity").isNumeric().withMessage("Budget needs to be a number"),
   handleInputError,
   ExpenseControllers.createBudget
 );

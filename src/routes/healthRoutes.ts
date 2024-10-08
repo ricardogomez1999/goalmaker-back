@@ -3,8 +3,11 @@ import { body, param } from "express-validator";
 import { handleInputError } from "../middleware/validation";
 import { FoodControllers } from "../controllers/FoodControllers";
 import { ActivityControllers } from "../controllers/ActivityControllers";
+import { authenticate } from "../middleware/auth";
 
 const router = Router();
+
+router.use(authenticate);
 
 //Food routes
 router.post(

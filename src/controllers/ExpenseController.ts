@@ -37,6 +37,11 @@ export class ExpenseControllers {
         const error = new Error("Not found expense");
         return res.status(404).json({ error: error.message });
       }
+
+      if (expense.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
+        return res.status(409).json({ error: error.message });
+      }
       res.json(expense);
     } catch (error) {
       res.status(500).json({ error });
@@ -51,6 +56,11 @@ export class ExpenseControllers {
       if (!expense) {
         const error = new Error("Not found expense");
         return res.status(404).json({ error: error.message });
+      }
+
+      if (expense.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
+        return res.status(409).json({ error: error.message });
       }
 
       await expense.save();
@@ -68,6 +78,10 @@ export class ExpenseControllers {
       if (!expense) {
         const error = new Error("Not found expense");
         return res.status(404).json({ error: error.message });
+      }
+      if (expense.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
+        return res.status(409).json({ error: error.message });
       }
 
       await expense.deleteOne();
@@ -124,6 +138,8 @@ export class ExpenseControllers {
   static createBudget = async (req: Request, res: Response) => {
     const budget = new Budget(req.body);
 
+    budget.user = req.user.id;
+
     try {
       await budget.save();
       res.send("Budget created successfully");
@@ -148,7 +164,7 @@ export class ExpenseControllers {
       const { startDate, endDate } = req.query;
 
       const expenses = await Expense.find({
-        user: req.user.id, // Filter by user ID
+        user: req.user.id,
         createdAt: {
           $gte: new Date(startDate as string),
           $lte: new Date(endDate as string),
@@ -156,28 +172,23 @@ export class ExpenseControllers {
       });
 
       if (!expenses.length) {
-        return res.json([]); // Return an empty array if no expenses are found
+        return res.json([]);
       }
 
-      // Step 2: Group expenses by category and calculate the total for each category
       const categoryTotals = expenses.reduce((acc, expense) => {
         const category = expense.category;
 
-        // Initialize the category total if it doesn't exist
         if (!acc[category]) {
           acc[category] = 0;
         }
 
-        // Add the expense quantity to the total for the category
         acc[category] += expense.quantity;
 
         return acc;
-      }, {} as Record<string, number>); // Using Record to define category and total amounts
-
-      // Step 3: Format the result into an array of objects
+      }, {} as Record<string, number>);
       const result = Object.keys(categoryTotals).map((category) => ({
         category,
-        totalAmount: categoryTotals[category],
+        quantity: categoryTotals[category],
       }));
 
       res.json(result);

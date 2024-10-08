@@ -1,7 +1,9 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types, PopulatedDoc } from "mongoose";
+import { IUser } from "./User";
 
 export interface IBudget extends Document {
   quantity: number;
+  user: PopulatedDoc<IUser & Document>;
 }
 
 const BudgetSchema: Schema = new Schema(
@@ -11,7 +13,12 @@ const BudgetSchema: Schema = new Schema(
       required: true,
       trim: true,
     },
+    user: {
+      type: Types.ObjectId,
+      ref: "User",
+    },
   },
+
   { timestamps: true }
 );
 

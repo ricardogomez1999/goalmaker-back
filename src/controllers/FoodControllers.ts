@@ -4,6 +4,8 @@ import Food from "../models/Food";
 export class FoodControllers {
   static createFood = async (req: Request, res: Response) => {
     const food = new Food(req.body);
+
+    food.user = req.user.id;
     try {
       await food.save();
       res.send("Food created successfully");
@@ -14,7 +16,9 @@ export class FoodControllers {
 
   static getAllFoods = async (req: Request, res: Response) => {
     try {
-      const food = await Food.find({});
+      const food = await Food.find({
+        $or: [{ user: { $in: req.user.id } }],
+      });
       res.json(food);
     } catch (error) {
       res.status(500).json({ error });
@@ -32,6 +36,11 @@ export class FoodControllers {
         return res.status(404).json({ error: error.message });
       }
 
+      if (food.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
+        return res.status(409).json({ error: error.message });
+      }
+
       res.json(food);
     } catch (error) {
       res.status(500).json({ error });
@@ -46,6 +55,10 @@ export class FoodControllers {
       if (!food) {
         const error = new Error("Food record does not exists");
         return res.status(404).json({ error: error.message });
+      }
+      if (food.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
+        return res.status(409).json({ error: error.message });
       }
 
       await food.save();
@@ -64,6 +77,11 @@ export class FoodControllers {
       if (!food) {
         const error = new Error("Food record does not exists");
         return res.status(404).json({ error: error.message });
+      }
+
+      if (food.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
+        return res.status(409).json({ error: error.message });
       }
 
       await food.deleteOne();

@@ -4,7 +4,7 @@ import Income from "../models/Income";
 export class IncomeControllers {
   static createIncome = async (req: Request, res: Response) => {
     const income = new Income(req.body);
-
+    income.user = req.user.id;
     try {
       await income.save();
       res.send("Income created successfully");
@@ -15,7 +15,9 @@ export class IncomeControllers {
 
   static getAllIncomes = async (req: Request, res: Response) => {
     try {
-      const incomes = await Income.find({});
+      const incomes = await Income.find({
+        $or: [{ user: { $in: req.user.id } }],
+      });
       res.json(incomes);
     } catch (error) {
       res.status(500).json({ error });
@@ -29,6 +31,11 @@ export class IncomeControllers {
 
       if (!income) {
         const error = new Error("Not found Income");
+        return res.status(404).json({ error: error.message });
+      }
+
+      if (income.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
         return res.status(404).json({ error: error.message });
       }
       res.json(income);
@@ -47,6 +54,11 @@ export class IncomeControllers {
         return res.status(404).json({ error: error.message });
       }
 
+      if (income.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
+        return res.status(404).json({ error: error.message });
+      }
+
       await income.save();
       res.json("Income updated successfully");
     } catch (error) {
@@ -61,6 +73,11 @@ export class IncomeControllers {
 
       if (!income) {
         const error = new Error("Not found Income");
+        return res.status(404).json({ error: error.message });
+      }
+
+      if (income.user.toString() !== req.user.id.toString()) {
+        const error = new Error("Not valid action");
         return res.status(404).json({ error: error.message });
       }
 
@@ -90,6 +107,7 @@ export class IncomeControllers {
           $gte: startOfMonth,
           $lte: endOfMonth,
         },
+        $or: [{ user: { $in: req.user.id } }],
       });
 
       res.json(incomes);
@@ -107,6 +125,7 @@ export class IncomeControllers {
           $gte: new Date(startDate as string),
           $lte: new Date(endDate as string),
         },
+        $or: [{ user: { $in: req.user.id } }],
       });
       res.json(incomes);
     } catch (error) {
@@ -118,31 +137,35 @@ export class IncomeControllers {
     try {
       const { startDate, endDate } = req.query;
 
-      const incomes = await Income.aggregate([
-        {
-          $match: {
-            createdAt: {
-              $gte: new Date(startDate as string),
-              $lte: new Date(endDate as string),
-            },
-          },
+      const incomes = await Income.find({
+        user: req.user.id,
+        createdAt: {
+          $gte: new Date(startDate as string),
+          $lte: new Date(endDate as string),
         },
-        {
-          $group: {
-            _id: "$category",
-            quantity: { $sum: "$quantity" },
-          },
-        },
-        {
-          $project: {
-            category: "$_id",
-            quantity: 1,
-            _id: 0,
-          },
-        },
-      ]);
+      });
 
-      res.json(incomes);
+      if (!incomes.length) {
+        return res.json([]);
+      }
+
+      const categoryTotals = incomes.reduce((acc, expense) => {
+        const category = expense.category;
+
+        if (!acc[category]) {
+          acc[category] = 0;
+        }
+
+        acc[category] += expense.quantity;
+
+        return acc;
+      }, {} as Record<string, number>);
+      const result = Object.keys(categoryTotals).map((category) => ({
+        category,
+        quantity: categoryTotals[category],
+      }));
+
+      res.json(result);
     } catch (error) {
       res.status(500).json({ error });
     }
