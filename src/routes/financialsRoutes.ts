@@ -4,10 +4,12 @@ import { ExpenseControllers } from "../controllers/ExpenseController";
 import { handleInputError } from "../middleware/validation";
 import { IncomeControllers } from "../controllers/IncomeControllers";
 import { TransactionController } from "../controllers/TransactionsController";
+import { authenticate } from "../middleware/auth";
 
 const router = Router();
 
 //Expenses Routes
+router.use(authenticate);
 
 router.post(
   "/expense",

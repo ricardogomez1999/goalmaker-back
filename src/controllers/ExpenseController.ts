@@ -1,10 +1,13 @@
 import type { Request, Response } from "express";
 import Expense from "../models/Expense";
 import Budget from "../models/Budget";
+import mongoose from "mongoose";
 
 export class ExpenseControllers {
   static createExpense = async (req: Request, res: Response) => {
     const expense = new Expense(req.body);
+
+    expense.user = req.user.id;
 
     try {
       await expense.save();
@@ -16,7 +19,9 @@ export class ExpenseControllers {
 
   static getAllExpenses = async (req: Request, res: Response) => {
     try {
-      const expenses = await Expense.find({});
+      const expenses = await Expense.find({
+        $or: [{ user: { $in: req.user.id } }],
+      });
       res.json(expenses);
     } catch (error) {
       res.status(500).json({ error });
@@ -90,6 +95,7 @@ export class ExpenseControllers {
           $gte: startOfMonth,
           $lte: endOfMonth,
         },
+        $or: [{ user: { $in: req.user.id } }],
       });
 
       res.json(expenses);
@@ -107,6 +113,7 @@ export class ExpenseControllers {
           $gte: new Date(startDate as string),
           $lte: new Date(endDate as string),
         },
+        $or: [{ user: { $in: req.user.id } }],
       });
       res.json(expenses);
     } catch (error) {
@@ -127,7 +134,9 @@ export class ExpenseControllers {
 
   static getUsersBudget = async (req: Request, res: Response) => {
     try {
-      const budget = await Budget.find({});
+      const budget = await Budget.find({
+        $or: [{ user: { $in: req.user.id } }],
+      });
       res.json(budget);
     } catch (error) {
       res.status(500).json({ error });
@@ -138,31 +147,40 @@ export class ExpenseControllers {
     try {
       const { startDate, endDate } = req.query;
 
-      const expenses = await Expense.aggregate([
-        {
-          $match: {
-            createdAt: {
-              $gte: new Date(startDate as string),
-              $lte: new Date(endDate as string),
-            },
-          },
+      const expenses = await Expense.find({
+        user: req.user.id, // Filter by user ID
+        createdAt: {
+          $gte: new Date(startDate as string),
+          $lte: new Date(endDate as string),
         },
-        {
-          $group: {
-            _id: "$category",
-            quantity: { $sum: "$quantity" },
-          },
-        },
-        {
-          $project: {
-            category: "$_id",
-            quantity: 1,
-            _id: 0,
-          },
-        },
-      ]);
+      });
 
-      res.json(expenses);
+      if (!expenses.length) {
+        return res.json([]); // Return an empty array if no expenses are found
+      }
+
+      // Step 2: Group expenses by category and calculate the total for each category
+      const categoryTotals = expenses.reduce((acc, expense) => {
+        const category = expense.category;
+
+        // Initialize the category total if it doesn't exist
+        if (!acc[category]) {
+          acc[category] = 0;
+        }
+
+        // Add the expense quantity to the total for the category
+        acc[category] += expense.quantity;
+
+        return acc;
+      }, {} as Record<string, number>); // Using Record to define category and total amounts
+
+      // Step 3: Format the result into an array of objects
+      const result = Object.keys(categoryTotals).map((category) => ({
+        category,
+        totalAmount: categoryTotals[category],
+      }));
+
+      res.json(result);
     } catch (error) {
       res.status(500).json({ error });
     }

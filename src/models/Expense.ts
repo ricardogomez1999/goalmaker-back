@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Schema, Document, Types, PopulatedDoc } from "mongoose";
+import { IUser } from "./User";
 
 const expenseType = {
   FOOD: "food",
@@ -18,6 +19,7 @@ export interface IExpense extends Document {
   quantity: number;
   category: expenseType;
   createdAt: Date;
+  user: PopulatedDoc<IUser & Document>;
 }
 
 const ExpenseSchema: Schema = new Schema(
@@ -36,6 +38,10 @@ const ExpenseSchema: Schema = new Schema(
       type: String,
       enum: Object.values(expenseType),
       default: expenseType.OTHERS,
+    },
+    user: {
+      type: Types.ObjectId,
+      ref: "User",
     },
   },
   { timestamps: true }
