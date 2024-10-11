@@ -2,6 +2,7 @@ import { Router } from "express";
 import { AuthController } from "../controllers/AuthController";
 import { body, param } from "express-validator";
 import { handleInputError } from "../middleware/validation";
+import { authenticate } from "../middleware/auth";
 
 const router = Router();
 
@@ -78,5 +79,7 @@ router.post(
   handleInputError,
   AuthController.resetPasswordWithToken
 );
+
+router.get("/user", authenticate, AuthController.user);
 
 export default router;
